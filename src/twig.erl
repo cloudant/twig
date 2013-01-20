@@ -14,7 +14,7 @@
 
 -module(twig).
 
--export([log/2, log/3, log/4, set_level/1]).
+-export([log/2, log/3, log/4, set_level/1, get_user_level/1, set_user_level/1]).
 
 -include("twig_int.hrl").
 
@@ -29,7 +29,13 @@ log(LevelAtom, Format, Data) ->
 
 log(LevelAtom, Format, Data, _Options) ->
     %% TODO do something useful with options
-    Level = twig_util:level(LevelAtom),
+    BaseLevel = twig_util:level(LevelAtom),
+    Level = case get(twig_user_level) of
+        undefined ->
+            BaseLevel;
+        UserLevel ->
+            min(BaseLevel, twig_util:level(UserLevel))
+    end,
     case application:get_env(twig, level) of
         {ok, Threshold} when Level =< Threshold ->
             send_message(Level, Format, Data);
@@ -38,6 +44,13 @@ log(LevelAtom, Format, Data, _Options) ->
         _ ->
             ok
     end.
+
+get_user_level(Name) ->
+    twig_kv:get({twig_user_level, Name}).
+
+% Set user level for the current process
+set_user_level(Level) ->
+    put(twig_user_level, Level).
 
 %% internal
 
