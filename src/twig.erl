@@ -14,7 +14,8 @@
 
 -module(twig).
 
--export([log/2, log/3, log/4, set_level/1, get_user_level/1, set_user_level/1]).
+-export([log/2, log/3, log/4, set_level/1]).
+-export([get_user_level/1, set_user_level/2, init_user_logging/1]).
 
 -include("twig_int.hrl").
 
@@ -48,9 +49,19 @@ log(LevelAtom, Format, Data, _Options) ->
 get_user_level(Name) ->
     twig_kv:get({twig_user_level, Name}).
 
-% Set user level for the current process
-set_user_level(Level) ->
-    put(twig_user_level, Level).
+set_user_level(Name, Level) ->
+    twig_kv:put({twig_user_level, Name}, Level).
+
+init_user_logging(Name) ->
+    if Name == null -> ok;
+        true ->
+            case get_user_level(Name) of
+                undefined ->
+                    ok;
+                Level ->
+                    put(twig_user_level, Level)
+            end
+    end.
 
 %% internal
 
