@@ -19,7 +19,9 @@
 -include("twig_int.hrl").
 
 set_level(LevelAtom) ->
-    application:set_env(twig, level, twig_util:level(LevelAtom)).
+    Level = twig_util:level(LevelAtom),
+    application:set_env(twig, level, Level),
+    gen_event:call(error_logger, twig_event_handler, {set_level, Level}).
 
 log(LevelAtom, String) ->
     log(LevelAtom, String, [], []).
