@@ -132,11 +132,30 @@ message(supervisor_report, Report) ->
     end,
     {supervisor_report, twig_util:format("~p ~p (~p) child: ~p [~p] ~p:~p",
             [Name, Error, Reason, ChildName, ChildPid, M, F])};
+message(progress, Report0) ->
+    Report = lists:sort(Report0),
+    Msg = case Report of
+        [{application, App}, {started_at, Node}] ->
+            Fmt = "PROGRESS: Application ~w started on node ~w",
+            twig_util:format(Fmt, [App, Node]);
+        [{started, Started}, {supervisor, Sup}] ->
+            MFA = case get_value(mfargs, Started) of
+                {M, F, Args} ->
+                    io_lib:format("~w:~w/~w", [M, F, length(Args)]);
+                _ ->
+                    "<unknown>"
+            end,
+            Pid = get_value(pid, Started),
+            Fmt = "PROGRESS: Supervisor ~w started ~w as ~s",
+            twig_util:format(Fmt, [Sup, Pid, MFA]);
+        _ ->
+            twig_util:format("PROGRESS: ~w", [Report])
+    end,
+    {progress, Msg};
 message(Type, Report) when Type == std_error;
                            Type == std_info;
                            Type == std_warning;
-                           Type == progress_report;
-                           Type == progress ->
+                           Type == progress_report ->
     {Type, twig_util:format("~2048.0p", [Report])};
 message(Format, Args) when is_list(Format) ->
     {msg, twig_util:format(Format, Args)};
@@ -147,7 +166,7 @@ otp_event_level(_, crash_report) ->         ?LEVEL_CRIT;
 otp_event_level(_, supervisor_report) ->    ?LEVEL_WARN;
 otp_event_level(_, supervisor) ->           ?LEVEL_WARN;
 otp_event_level(_, progress_report) ->      ?LEVEL_DEBUG;
-otp_event_level(_, progress) ->             ?LEVEL_DEBUG;
+otp_event_level(_, progress) ->             ?LEVEL_NOTICE;
 otp_event_level(error, _) ->                ?LEVEL_ERR;
 otp_event_level(warning_msg, _) ->          ?LEVEL_WARN;
 otp_event_level(info_msg, _) ->             ?LEVEL_NOTICE;
