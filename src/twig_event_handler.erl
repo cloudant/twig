@@ -104,7 +104,7 @@ write(Level, MsgId, Msg, Pid, State) when is_list(Msg); is_binary(Msg) ->
     send(Socket, Host, Port, [Pre, Msg, $\n]).
 
 send(_, undefined, _, Packet) ->
-    io:put_chars(Packet);
+    io:format("~s", [Packet]);
 send(Socket, Host, Port, Packet) ->
     gen_udp:send(Socket, Host, Port, Packet).
 
