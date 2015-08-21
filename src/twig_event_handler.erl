@@ -40,8 +40,12 @@ init([]) ->
     {ok, ok, State} = handle_call(load_config, #state{socket=Socket}),
     {ok, State}.
 
-handle_event(#twig{level=Level, msgid=MsgId, msg=Msg, pid=Pid}, State) ->
-    write(Level, MsgId, Msg, Pid, State),
+handle_event(#twig{level=Level, facility=undefined, msgid=MsgId, msg=Msg, pid=Pid},
+             #state{facility = Facility} = State) ->
+    write(Level, Facility, MsgId, Msg, Pid, State),
+    {ok, State};
+handle_event(#twig{level=Level, facility=Facility, msgid=MsgId, msg=Msg, pid=Pid}, State) ->
+    write(Level, Facility, MsgId, Msg, Pid, State),
     {ok, State};
 
 % OTP standard events
@@ -93,12 +97,16 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-write(Level, undefined, Msg, Pid, State) ->
-    write(Level, "--------", Msg, Pid, State);
-write(Level, MsgId, Msg, Pid, State) when is_list(Msg); is_binary(Msg) ->
-    #state{facility=Facil, appid=App, hostname=Hostname, host=Host, port=Port,
+write(Level, MsgId, Msg, Pid, State) ->
+    #state{facility = Facility} = State,
+    write(Level, Facility, MsgId, Msg, Pid, State).
+
+write(Level, Facility, undefined, Msg, Pid, State) ->
+    write(Level, Facility, "--------", Msg, Pid, State);
+write(Level, Facility, MsgId, Msg, Pid, State) when is_list(Msg); is_binary(Msg) ->
+    #state{appid=App, hostname=Hostname, host=Host, port=Port,
         socket=Socket} = State,
-    Pre = io_lib:format("<~B>~B ~s ~s ~s ~p ~s - ", [Facil bor Level,
+    Pre = io_lib:format("<~B>~B ~s ~s ~s ~p ~s - ", [Facility bor Level,
         ?SYSLOG_VERSION, twig_util:iso8601_timestamp(), Hostname, App, Pid,
         MsgId]),
     send(Socket, Host, Port, [Pre, Msg, $\n]).

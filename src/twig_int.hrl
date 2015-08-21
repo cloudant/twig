@@ -23,4 +23,4 @@
 -define(LEVEL_ALERT, 1).
 -define(LEVEL_EMERG, 0).
 
--record(twig, {level, msgid, msg, pid}).
+-record(twig, {level, facility, msgid, msg, pid}).
