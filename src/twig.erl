@@ -13,10 +13,40 @@
 % the License.
 
 -module(twig).
+-behaviour(couch_log).
 
+%% couch_log interface
+-export([debug/2, info/2, notice/2, warning/2, error/2, critical/2, alert/2, emergency/2]).
+-export([set_level/1]).
+
+%% native twig interface
 -export([log/2, log/3, log/4, set_level/1]).
 
 -include("twig_int.hrl").
+
+debug(Fmt, Args) ->
+    log(debug, Fmt, Args).
+
+info(Fmt, Args) ->
+    log(info, Fmt, Args).
+
+notice(Fmt, Args) ->
+    log(notice, Fmt, Args).
+
+warning(Fmt, Args) ->
+    log(warning, Fmt, Args).
+
+error(Fmt, Args) ->
+    log(error, Fmt, Args).
+
+critical(Fmt, Args) ->
+    log(crit, Fmt, Args).
+
+alert(Fmt, Args) ->
+    log(alert, Fmt, Args).
+
+emergency(Fmt, Args) ->
+    log(emerg, Fmt, Args).
 
 set_level(LevelAtom) ->
     Level = twig_util:level(LevelAtom),
