@@ -68,11 +68,16 @@ handle_call({set_level, Level}, State) ->
     {ok, ok, State#state{level = Level}};
 
 handle_call(load_config, State) ->
-    Host = case inet:getaddr(get_env(host, undefined), inet) of
-    {ok, Address} ->
-        Address;
-    {error, _} ->
-        undefined
+    Host = case get_env(host, undefined) of
+        undefined ->
+            undefined;
+        SyslogHost ->
+            case inet:getaddr(SyslogHost, inet) of
+                {ok, Address} ->
+                    Address;
+                {error, _} ->
+                    undefined
+            end
     end,
     NewState = State#state{
         host = Host,
