@@ -3,12 +3,12 @@
 %% compliance with the License. You should have received a copy of the
 %% Erlang Public License along with your Erlang distribution. If not, it can be
 %% retrieved via the world wide web at http://www.erlang.org/.
-%% 
+%%
 %% Software distributed under the License is distributed on an "AS IS"
 %% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %% the License for the specific language governing rights and limitations
 %% under the License.
-%% 
+%%
 %% The Initial Developer of the Original Code is Corelatus AB.
 %% Portions created by Corelatus are Copyright 2003, Corelatus
 %% AB. All Rights Reserved.''
@@ -25,7 +25,7 @@
 %%
 -module(trunc_io).
 -author('matthias@corelatus.se').
-%% And thanks to Chris Newcombe for a bug fix 
+%% And thanks to Chris Newcombe for a bug fix
 -export([print/2, fprint/2, safe/2]).               % interface functions
 -export([perf/0, perf/3, perf1/0, test/0, test/2]). % testing functions
 -version("$Id: trunc_io.erl,v 1.11 2009-02-23 12:01:06 matthias Exp $").
@@ -33,11 +33,11 @@
 
 %% Returns an flattened list containing the ASCII representation of the given
 %% term.
-fprint(T, Max) -> 
+fprint(T, Max) ->
     {L, _} = print(T, Max),
     lists:flatten(L).
 
-%% Same as print, but never crashes. 
+%% Same as print, but never crashes.
 %%
 %% This is a tradeoff. Print might conceivably crash if it's asked to
 %% print something it doesn't understand, for example some new data
@@ -45,12 +45,12 @@ fprint(T, Max) ->
 %% to io_lib to format the term, but then the formatting is
 %% depth-limited instead of length limited, so you might run out
 %% memory printing it. Out of the frying pan and into the fire.
-%% 
+%%
 safe(What, Len) ->
     case catch print(What, Len) of
 	{L, Used} when is_list(L) -> {L, Used};
 	_ -> {"unable to print" ++ io_lib:write(What, 99)}
-    end.	     
+    end.
 
 %% Returns {List, Length}
 print(_, Max) when Max < 0 -> {"...", 3};
@@ -58,8 +58,8 @@ print(Tuple, Max) when is_tuple(Tuple) ->
     {TC, Len} = tuple_contents(Tuple, Max-2),
     {[${, TC, $}], Len + 2};
 
-%% We assume atoms, floats, funs, integers, PIDs, ports and refs never need 
-%% to be truncated. This isn't strictly true, someone could make an 
+%% We assume atoms, floats, funs, integers, PIDs, ports and refs never need
+%% to be truncated. This isn't strictly true, someone could make an
 %% arbitrarily long bignum. Let's assume that won't happen unless someone
 %% is being malicious.
 %%
@@ -100,7 +100,12 @@ print(Port, _Max) when is_port(Port) ->
     {L, length(L)};
 
 print(List, Max) when is_list(List) ->
-    alist_start(List, Max).
+    alist_start(List, Max);
+
+print(Map, Max) when is_map(Map) ->
+    Binary = iolist_to_binary(io_lib:format("~p", [Map])),
+    B = binary_to_list(Binary, 1, lists:min([Max, size(Binary)])),
+    alist_start(B, Max).
 
 %% Returns {List, Length}
 tuple_contents(Tuple, Max) ->
@@ -111,7 +116,7 @@ tuple_contents(Tuple, Max) ->
 %% Returns {List, Length}
 list_body([], _) -> {[], 0};
 list_body(_, Max) when Max < 4 -> {"...", 3};
-list_body([H|T], Max) -> 
+list_body([H|T], Max) ->
     {List, Len} = print(H, Max),
     {Final, FLen} = list_bodyc(T, Max - Len),
     {[List|Final], FLen + Len};
@@ -121,7 +126,7 @@ list_body(X, Max) ->  %% improper list
 
 list_bodyc([], _) -> {[], 0};
 list_bodyc(_, Max) when Max < 4 -> {"...", 3};
-list_bodyc([H|T], Max) -> 
+list_bodyc([H|T], Max) ->
     {List, Len} = print(H, Max),
     {Final, FLen} = list_bodyc(T, Max - Len - 1),
     {[$,, List|Final], FLen + Len + 1};
@@ -181,19 +186,19 @@ test(Mod, Func) ->
 		    _ -> ok
 		end
 	end,
-    
+
     lists:foreach(G, Simple_items),
-    
+
     Tuples = [ {1,2,3,a,b,c}, {"abc", def, 1234},
 	       {{{{a},b,c,{d},e}},f}],
-    
+
     Lists = [ [1,2,3,4,5,6,7], lists:seq(1,1000),
 	      [{a}, {a,b}, {a, [b,c]}, "def"], [a|b], [$a|$b] ],
-    
-    
+
+
     lists:foreach(G, Tuples),
     lists:foreach(G, Lists).
-    
+
 perf() ->
     {New, _} = timer:tc(trunc_io, perf, [trunc_io, print, 1000]),
     {Old, _} = timer:tc(trunc_io, perf, [io_lib, write, 1000]),
@@ -203,7 +208,7 @@ perf(M, F, Reps) when Reps > 0 ->
     test(M,F),
     perf(M,F,Reps-1);
 perf(_,_,_) ->
-    done.    
+    done.
 
 %% Performance test. Needs a particularly large term I saved as a binary...
 perf1() ->
